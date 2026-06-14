@@ -2,7 +2,7 @@ import { getServerUrl } from '../utils/function.js';
 import { requestJson } from '../utils/request.js';
 
 export const userModify = async changeData => {
-    const result = await requestJson(`${getServerUrl()}/v1/users/me`, {
+    return await requestJson(`${getServerUrl()}/users/me`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -10,16 +10,14 @@ export const userModify = async changeData => {
         credentials: 'include',
         body: JSON.stringify(changeData),
     });
-    return result;
 };
 
 export const userDelete = async () => {
-    const result = await requestJson(`${getServerUrl()}/v1/users/me`, {
+    return await requestJson(`${getServerUrl()}/users/me`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
         },
         credentials: 'include',
     });
-    return result;
 };

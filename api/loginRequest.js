@@ -2,7 +2,7 @@ import { getServerUrl } from '../utils/function.js';
 import { requestJson } from '../utils/request.js';
 
 export const userLogin = async (email, password) => {
-    const result = await requestJson(`${getServerUrl()}/v1/auth/login`, {
+    const result = await requestJson(`${getServerUrl()}/auth/login`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -13,5 +13,9 @@ export const userLogin = async (email, password) => {
             password: password,
         }),
     });
+
+    if (result.ok && result.data?.accessToken) {
+        localStorage.setItem('accessToken', result.data.accessToken);
+    }
     return result;
 };
