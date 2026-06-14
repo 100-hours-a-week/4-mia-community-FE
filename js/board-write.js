@@ -226,7 +226,7 @@ const setModifyData = data => {
 };
 
 const init = async () => {
-    const dataResponse = await authCheck();
+    const dataResponse = authCheck();
     const data = await dataResponse.json();
     const modifyId = checkModifyMode();
 

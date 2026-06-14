@@ -142,14 +142,14 @@ const addInfinityScrollEvent = () => {
             window.scrollY + window.innerHeight >=
             document.documentElement.scrollHeight * SCROLL_THRESHOLD;
         if (hasScrolledToThreshold) {
-            loadBoardItems();
+            await loadBoardItems();
         }
     });
 };
 
 const init = async () => {
     try {
-        const response = await authCheck();
+        const response = authCheck();
         const data = await response.json();
         if (response.status === HTTP_NOT_AUTHORIZED) {
             window.location.href = '/html/login.html';

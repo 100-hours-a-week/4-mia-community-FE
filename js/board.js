@@ -231,7 +231,7 @@ const inputComment = async () => {
 
 const init = async () => {
     try {
-        const data = await authCheck();
+        const data = authCheck();
         const myInfoResult = await data.json();
         if (data.status !== HTTP_OK) {
             throw new Error('사용자 정보를 불러오는데 실패하였습니다.');
@@ -261,7 +261,7 @@ const init = async () => {
         const pageData = await getBoardDetail(pageId);
 
         if (parseInt(pageData.userId, 10) === parseInt(myInfo.userId, 10)) {
-            setBoardModify(pageData, myInfo);
+            await setBoardModify(pageData, myInfo);
         }
         setBoardDetail(pageData);
 
