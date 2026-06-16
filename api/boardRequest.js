@@ -1,46 +1,38 @@
 import { getServerUrl } from '../utils/function.js';
-import { requestJson } from '../utils/request.js';
+import { requestJsonWithAuth } from '../utils/request.js';
 
-export const getPost = postId => {
-    return requestJson(`${getServerUrl()}/posts/${postId}`, {
+export const getPost = postId =>
+    requestJsonWithAuth(`${getServerUrl()}/posts/${postId}`, {
         credentials: 'include',
     });
-};
 
-export const deletePost = async postId => {
-    return await requestJson(`${getServerUrl()}/posts/${postId}`, {
+export const deletePost = postId =>
+    requestJsonWithAuth(`${getServerUrl()}/posts/${postId}`, {
         method: 'DELETE',
         credentials: 'include',
     });
-};
 
-export const writeComment = async (pageId, comment) => {
-    return await requestJson(`${getServerUrl()}/posts/${pageId}/comments`, {
+export const writeComment = (pageId, comment) =>
+    requestJsonWithAuth(`${getServerUrl()}/posts/${pageId}/comments`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ commentContent: comment }),
+        body: JSON.stringify({ content: comment }),
     });
-};
 
-export const getComments = async postId => {
-    return await requestJson(`${getServerUrl()}/posts/${postId}/comments`, {
+export const getComments = postId =>
+    requestJsonWithAuth(`${getServerUrl()}/posts/${postId}/comments`, {
         credentials: 'include',
     });
-};
 
-export const likePost = async postId => {
-    return await requestJson(`${getServerUrl()}/posts/${postId}/likes`, {
+export const likePost = postId =>
+    requestJsonWithAuth(`${getServerUrl()}/posts/${postId}/likes`, {
         method: 'POST',
         credentials: 'include',
     });
-};
 
-export const unlikePost = async postId => {
-    return await requestJson(`${getServerUrl()}/posts/${postId}/likes`, {
+export const unlikePost = postId =>
+    requestJsonWithAuth(`${getServerUrl()}/posts/${postId}/likes`, {
         method: 'DELETE',
         credentials: 'include',
     });
-};

@@ -141,7 +141,7 @@ const setBoardDetail = data => {
     viewCountElement.textContent = formatCount(data.viewCount);
 
     const commentCountElement = document.querySelector('.commentCount h3');
-    commentCountElement.textContent = data.commentCount.toLocaleString();
+    commentCountElement.textContent = (data.commentCount ?? 0).toLocaleString();
 };
 
 const setBoardModify = async (data, myInfo) => {
@@ -177,7 +177,7 @@ const getBoardComment = async id => {
     const { ok, status, data } = await getComments(id);
     if (!ok) return [];
     if (status !== HTTP_OK) return [];
-    return data;
+    return data.data;
 };
 
 const setBoardComment = (data, myInfo) => {
@@ -231,24 +231,21 @@ const inputComment = async () => {
 
 const init = async () => {
     try {
-        const data = authCheck();
-        const myInfoResult = await data.json();
-        if (data.status !== HTTP_OK) {
-            throw new Error('사용자 정보를 불러오는데 실패하였습니다.');
+        const token = authCheck();
+        if (!token) return;
+
+        const response = await fetch(`${getServerUrl()}/users/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            window.location.href = '/html/login.html';
+            return;
         }
 
-        const myInfo = myInfoResult.data;
-        const commentBtnElement = document.querySelector('.commentInputBtn');
-        const textareaElement = document.querySelector(
-            '.commentInputWrap textarea',
-        );
-        textareaElement.addEventListener('input', inputComment);
-        commentBtnElement.addEventListener('click', addComment);
-        commentBtnElement.disabled = true;
-        console.log(myInfo);
-        if (data.status === HTTP_NOT_AUTHORIZED) {
-            window.location.href = '/html/login.html';
-        }
+        const { data: myInfo } = await response.json();
+
         const profileImage = resolveImageUrl(
             myInfo.profileImageUrl,
             DEFAULT_PROFILE_IMAGE,
@@ -256,16 +253,19 @@ const init = async () => {
 
         prependChild(document.body, Header('커뮤니티', 2, profileImage));
 
-        const pageId = getQueryString('id');
+        const commentBtnElement = document.querySelector('.commentInputBtn');
+        const textareaElement = document.querySelector('.commentInputWrap textarea');
+        textareaElement.addEventListener('input', inputComment);
+        commentBtnElement.addEventListener('click', addComment);
+        commentBtnElement.disabled = true;
 
+        const pageId = getQueryString('id');
         const pageData = await getBoardDetail(pageId);
 
-        if (parseInt(pageData.userId, 10) === parseInt(myInfo.userId, 10)) {
-            await setBoardModify(pageData, myInfo);
-        }
+        await setBoardModify(pageData, myInfo);
         setBoardDetail(pageData);
 
-        getBoardComment(pageId).then(data => setBoardComment(data, myInfo));
+        getBoardComment(pageId).then(comments => setBoardComment(comments, myInfo));
     } catch (error) {
         console.error(error);
     }

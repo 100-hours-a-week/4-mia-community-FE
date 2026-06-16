@@ -1,8 +1,8 @@
 import { getServerUrl } from '../utils/function.js';
-import { requestJson } from '../utils/request.js';
+import {requestJson, requestJsonWithAuth} from '../utils/request.js';
 
 export const getPosts = (offset, limit) => {
-    return requestJson(
+    return requestJsonWithAuth(
         `${getServerUrl()}/posts?offset=${offset}&limit=${limit}`,
         {
             credentials: 'include',
@@ -18,7 +18,7 @@ export const searchPosts = (keyword, offset = 0, limit = 5, sort = 'recent') => 
         sort,
     });
 
-    return requestJson(
+    return requestJsonWithAuth(
         `${getServerUrl()}/posts/search?${query.toString()}`,
         {
             credentials: 'include',
