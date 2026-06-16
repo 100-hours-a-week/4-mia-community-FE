@@ -2,7 +2,7 @@ import { getServerUrl } from '../utils/function.js';
 import { requestJson } from '../utils/request.js';
 
 export const userSignup = async data => {
-    return await requestJson(`${getServerUrl()} /auth/signup`, {
+    return await requestJson(`${getServerUrl()}/auth/signup`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

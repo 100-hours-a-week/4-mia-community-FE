@@ -9,8 +9,6 @@ import {
 } from '../utils/function.js';
 import {
     userSignup,
-    checkEmail,
-    checkNickname,
     fileUpload,
 } from '../api/signupRequest.js';
 
@@ -103,13 +101,8 @@ const inputEventHandler = async (event, uid) => {
             helperElement.textContent =
                 '*올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)';
         } else {
-            const { status } = await checkEmail(value);
-            if (status === HTTP_OK) {
-                helperElement.textContent = '';
-                isComplete = true;
-            } else {
-                helperElement.textContent = '*중복된 이메일 입니다.';
-            }
+            helperElement.textContent = '';
+            isComplete = true;
         }
         if (isComplete) {
             signupData.email = value;
@@ -166,7 +159,7 @@ const inputEventHandler = async (event, uid) => {
         if (value == '' || value == null) {
             helperElement.textContent = '*닉네임을 입력해주세요.';
         } else if (value.includes(' ')) {
-            helperElement.textContent = '*뛰어쓰기를 없애주세요.';
+            helperElement.textContent = '*띄어쓰기를 없애주세요.';
         } else if (value.length > 10) {
             helperElement.textContent =
                 '*닉네임은 최대 10자까지 작성 가능합니다.';
@@ -174,14 +167,8 @@ const inputEventHandler = async (event, uid) => {
             helperElement.textContent =
                 '*닉네임에 특수 문자는 사용할 수 없습니다.';
         } else {
-            const { status } = await checkNickname(value);
-
-            if (status === HTTP_OK) {
-                helperElement.textContent = '';
-                isComplete = true;
-            } else {
-                helperElement.textContent = '*중복된 닉네임 입니다.';
-            }
+            helperElement.textContent = '';
+            isComplete = true;
         }
 
         if (isComplete) {
