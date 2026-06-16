@@ -55,6 +55,7 @@ const setBoardDetail = data => {
     const nicknameElement = document.querySelector('.nickname');
 
     titleElement.textContent = data.title;
+    const postId = data.id;
     const date = new Date(data.createdAt);
     const formattedDate = `${date.getFullYear()}-${padTo2Digits(date.getMonth() + 1)}-${padTo2Digits(date.getDate())} ${padTo2Digits(date.getHours())}:${padTo2Digits(date.getMinutes())}:${padTo2Digits(date.getSeconds())}`;
     createdAtElement.textContent = formattedDate;
@@ -83,7 +84,7 @@ const setBoardDetail = data => {
     let isLiked = Boolean(data.isLiked);
     let isLikeLoading = false;
 
-    likeCountElement.textContent = formatCount(data.likeCount);
+    likeCountElement.textContent = formatCount(data.stats.likeCount);
     setLikeButtonState(likeButtonElement, isLiked);
 
     likeButtonElement.addEventListener('click', async () => {
@@ -92,9 +93,7 @@ const setBoardDetail = data => {
 
         try {
             if (!isLiked) {
-                const { ok, status, code, data: likeData } = await likePost(
-                    data.id,
-                );
+                const { ok, status, code, data: likeData } = await likePost(postId);
                 if (ok) {
                     isLiked = true;
                     setLikeButtonState(likeButtonElement, isLiked);
@@ -112,9 +111,7 @@ const setBoardDetail = data => {
                     Dialog('좋아요 실패', '좋아요 처리에 실패하였습니다.');
                 }
             } else {
-                const { ok, status, code, data: likeData } = await unlikePost(
-                    data.id,
-                );
+                const { ok, status, code, data: likeData } = await unlikePost(postId);
                 if (ok) {
                     isLiked = false;
                     setLikeButtonState(likeButtonElement, isLiked);
@@ -138,7 +135,7 @@ const setBoardDetail = data => {
     });
 
     const viewCountElement = document.querySelector('.viewCount h3');
-    viewCountElement.textContent = formatCount(data.viewCount);
+    viewCountElement.textContent = formatCount(data.stats.viewCount);
 
     const commentCountElement = document.querySelector('.commentCount h3');
     commentCountElement.textContent = (data.commentCount ?? 0).toLocaleString();
@@ -152,6 +149,11 @@ const setBoardModify = async (data, myInfo) => {
         const modifyBtnElement = document.querySelector('#deleteBtn');
         const postId = getQueryString('id');
         modifyBtnElement.addEventListener('click', () => {
+            // 삭제 버튼 클릭 이벤트
+            if (myInfo.userId !== data.userId) {
+                return Dialog('권한 없음', '권한이 없습니다.');
+            }
+
             Dialog(
                 '게시글을 삭제하시겠습니까?',
                 '삭제한 내용은 복구 할 수 없습니다.',
