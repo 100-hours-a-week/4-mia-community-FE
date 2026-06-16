@@ -102,10 +102,10 @@ const addBoard = async () => {
     }
 };
 const changeEventHandler = async (event, uid) => {
-    if (uid == 'title') {
+    if (uid === 'title') {
         const value = event.target.value;
         const helperElement = contentHelpElement;
-        if (!value || value == '') {
+        if (!value || value === '') {
             boardWrite[uid] = '';
             helperElement.textContent = '제목을 입력해주세요.';
         } else if (value.length > MAX_TITLE_LENGTH) {
@@ -116,10 +116,10 @@ const changeEventHandler = async (event, uid) => {
             boardWrite[uid] = value;
             helperElement.textContent = '';
         }
-    } else if (uid == 'content') {
+    } else if (uid === 'content') {
         const value = event.target.value;
         const helperElement = contentHelpElement;
-        if (!value || value == '') {
+        if (!value || value === '') {
             boardWrite[uid] = '';
             helperElement.textContent = '내용을 입력해주세요.';
         } else if (value.length > MAX_CONTENT_LENGTH) {
@@ -130,7 +130,7 @@ const changeEventHandler = async (event, uid) => {
             boardWrite[uid] = value;
             helperElement.textContent = '';
         }
-    } else if (uid == 'image') {
+    } else if (uid === 'image') {
         const file = event.target.files[0]; // 사용자가 선택한 파일
         if (!file) {
             console.log('파일이 선택되지 않았습니다.');
@@ -226,12 +226,25 @@ const setModifyData = data => {
 };
 
 const init = async () => {
-    const dataResponse = authCheck();
-    const data = await dataResponse.json();
+    const token = authCheck();
+
+    if (!token) return;
+
+    const response = await fetch(`${getServerUrl()}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
+    });
+
+    if (!response.ok) {
+        window.location.href = '/html/login.html';
+        return;
+    }
+
+    const { data: myInfo } = await response.json();
     const modifyId = checkModifyMode();
 
     const profileImage = resolveImageUrl(
-        data.data.profileImageUrl,
+        myInfo.profileImageUrl,
         DEFAULT_PROFILE_IMAGE,
     );
 
@@ -241,7 +254,7 @@ const init = async () => {
         isModifyMode = true;
         modifyData = await getBoardModifyData(modifyId);
 
-        if (data.idx !== modifyData.writerId) {
+        if (myInfo.userId !== modifyData.userId) {
             Dialog('권한 없음', '권한이 없습니다.', () => {
                 window.location.href = '/';
             });
