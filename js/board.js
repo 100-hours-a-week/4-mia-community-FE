@@ -61,7 +61,7 @@ const setBoardDetail = data => {
     createdAtElement.textContent = formattedDate;
 
     imgElement.src = resolveImageUrl(
-        data.profileImage,
+        data.profileImageUrl,
         DEFAULT_PROFILE_IMAGE,
     );
 
@@ -142,7 +142,7 @@ const setBoardDetail = data => {
 };
 
 const setBoardModify = async (data, myInfo) => {
-    if (myInfo.idx === data.writerId) {
+    if (myInfo.id === data.userId) {
         const modifyElement = document.querySelector('.hidden');
         modifyElement.classList.remove('hidden');
 

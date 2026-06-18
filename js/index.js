@@ -49,7 +49,7 @@ const setBoardItem = boardData => {
                     data.createdAt,
                     data.title,
                     data.stats.viewCount ?? 0,
-                    null,
+                    data.profileImageUrl,
                     data.nickname ,
                     null,
                     data.stats.likeCount,
@@ -149,7 +149,7 @@ const init = async () => {
             credentials: 'include',
         });
 
-        if (!response.ok) { // ✅ HTTP_NOT_AUTHORIZED 대신
+        if (!response.ok) {
             window.location.href = '/html/login.html';
             return;
         }

@@ -78,7 +78,7 @@ const addBoard = async () => {
 
         if (status === HTTP_CREATED) {
             localStorage.removeItem('postFileUrl');
-            window.location.href = `/html/board.html?id=${data.insertId}`;
+            window.location.href = `/html/board.html?id=${data.id}`;
         } else {
             const helperElement = contentHelpElement;
             helperElement.textContent = '제목, 내용을 모두 작성해주세요.';

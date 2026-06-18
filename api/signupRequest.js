@@ -2,7 +2,7 @@ import { getServerUrl } from '../utils/function.js';
 import { requestJson } from '../utils/request.js';
 
 export const userSignup = async data => {
-    return await requestJson(`${getServerUrl()}/auth/signup`, {
+    return await requestJson(`${getServerUrl()}/users`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ export const checkNickname = async nickname => {
 
 export const fileUpload = async file => {
     return await requestJson(
-        `${getServerUrl()}/users/upload/profile-image`,
+        `${getServerUrl()}/users/profile`,
         {
             method: 'POST',
             body: file,

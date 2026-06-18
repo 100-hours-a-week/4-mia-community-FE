@@ -40,7 +40,7 @@ const HTTP_CREATED = 201;
 
 const setData = data => {
     if (
-        // data.profileImageUrl === DEFAULT_PROFILE_IMAGE ||
+        data.profileImageUrl === DEFAULT_PROFILE_IMAGE ||
         data.profileImageUrl === null
     ) {
         profilePreview.src = DEFAULT_PROFILE_IMAGE;
@@ -129,7 +129,7 @@ const changeEventHandler = async (event, uid) => {
             // 파일 업로드를 위한 POST 요청 실행
             try {
                 const { ok, data } = await requestJsonWithAuth(
-                    `${getServerUrl()}/users/upload/profile-image`,
+                    `${getServerUrl()}/files/profile`,
                     {
                         method: 'POST',
                         body: formData,
