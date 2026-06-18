@@ -9,13 +9,10 @@ import {
 } from '../utils/function.js';
 import {
     userSignup,
-    checkEmail,
-    checkNickname,
     fileUpload,
 } from '../api/signupRequest.js';
 
 const MAX_PASSWORD_LENGTH = 20;
-const HTTP_OK = 200;
 const HTTP_CREATED = 201;
 
 const signupData = {
@@ -53,17 +50,17 @@ const sendSignupData = async () => {
         localStorage.removeItem('profileImageUrl');
         location.href = '/html/login.html';
     } else {
-        if (code === 'ALREADY_EXIST_EMAIL') {
+        if (code === 'EMAIL_ALREADY_EXISTS') {
             Dialog('회원 가입 실패', '이미 사용 중인 이메일입니다.');
-        } else if (code === 'ALREADY_EXIST_NICKNAME') {
+        } else if (code === 'NICKNAME_ALREADY_EXISTS') {
             Dialog('회원 가입 실패', '이미 사용 중인 닉네임입니다.');
         } else if (code === 'INVALID_INPUT') {
             Dialog('회원 가입 실패', '입력값을 확인해주세요.');
         } else {
             Dialog('회원 가입 실패', '잠시 뒤 다시 시도해 주세요', () => {});
         }
-        localStorage.removeItem('profileImageUrl');
-        location.href = '/html/signup.html';
+        // localStorage.removeItem('profileImageUrl');
+        // location.href = '/html/signup.html';
     }
 };
 
@@ -103,13 +100,8 @@ const inputEventHandler = async (event, uid) => {
             helperElement.textContent =
                 '*올바른 이메일 주소 형식을 입력해주세요. (예: example@example.com)';
         } else {
-            const { status } = await checkEmail(value);
-            if (status === HTTP_OK) {
-                helperElement.textContent = '';
-                isComplete = true;
-            } else {
-                helperElement.textContent = '*중복된 이메일 입니다.';
-            }
+            helperElement.textContent = '';
+            isComplete = true;
         }
         if (isComplete) {
             signupData.email = value;
@@ -166,7 +158,7 @@ const inputEventHandler = async (event, uid) => {
         if (value == '' || value == null) {
             helperElement.textContent = '*닉네임을 입력해주세요.';
         } else if (value.includes(' ')) {
-            helperElement.textContent = '*뛰어쓰기를 없애주세요.';
+            helperElement.textContent = '*띄어쓰기를 없애주세요.';
         } else if (value.length > 10) {
             helperElement.textContent =
                 '*닉네임은 최대 10자까지 작성 가능합니다.';
@@ -174,14 +166,8 @@ const inputEventHandler = async (event, uid) => {
             helperElement.textContent =
                 '*닉네임에 특수 문자는 사용할 수 없습니다.';
         } else {
-            const { status } = await checkNickname(value);
-
-            if (status === HTTP_OK) {
-                helperElement.textContent = '';
-                isComplete = true;
-            } else {
-                helperElement.textContent = '*중복된 닉네임 입니다.';
-            }
+            helperElement.textContent = '';
+            isComplete = true;
         }
 
         if (isComplete) {
@@ -258,7 +244,7 @@ const uploadProfileImage = () => {
 };
 
 const init = async () => {
-    await authCheckReverse();
+    authCheckReverse();
     prependChild(document.body, Header('커뮤니티', 1));
     observeSignupData();
     addEventForInputElements();

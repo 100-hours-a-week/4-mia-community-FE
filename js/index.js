@@ -5,15 +5,13 @@ import { authCheck, getServerUrl, prependChild, resolveImageUrl } from '../utils
 import { getPosts, searchPosts } from '../api/indexRequest.js';
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
-const HTTP_NOT_AUTHORIZED = 401;
 const SCROLL_THRESHOLD = 0.9;
-const INITIAL_OFFSET = 5;
-const ITEMS_PER_LOAD = 5;
+const ITEMS_PER_LOAD = 10;
+let currentPage = 1;
+let hasNext = true;
 const DEFAULT_SORT = 'recent';
 let currentKeyword = '';
 let currentSort = DEFAULT_SORT;
-let offset = 0;
-let isEnd = false;
 let isProcessing = false;
 
 const updateSortVisibility = () => {
@@ -25,14 +23,14 @@ const updateSortVisibility = () => {
 };
 
 // getBoardItem 함수
-const getBoardItem = async (offsetValue = 0, limitValue = 5) => {
+const getBoardItem = async (page = 1, pageSize = 10) => {
     const result =
         currentKeyword.trim() === ''
-            ? await getPosts(offsetValue, limitValue)
+            ? await getPosts(page, pageSize)
             : await searchPosts(
                   currentKeyword,
-                  offsetValue,
-                  limitValue,
+                  page,
+                  pageSize,
                   currentSort,
               );
     if (!result.ok) {
@@ -50,11 +48,11 @@ const setBoardItem = boardData => {
                     data.id,
                     data.createdAt,
                     data.title,
-                    data.viewCount,
-                    data.author ? data.author.profileImageUrl : null,
-                    data.author ? data.author.nickname : null,
-                    data.commentCount,
-                    data.likeCount,
+                    data.stats.viewCount ?? 0,
+                    data.profileImageUrl,
+                    data.nickname ,
+                    null,
+                    data.stats.likeCount,
                 ),
             )
             .join('');
@@ -70,25 +68,23 @@ const resetBoardList = () => {
 };
 
 const loadBoardItems = async ({ reset = false } = {}) => {
-    if (isProcessing || (!reset && isEnd)) return;
+    if (isProcessing || (!reset && !hasNext)) return;
     isProcessing = true;
 
     try {
         if (reset) {
-            offset = 0;
-            isEnd = false;
+            currentPage = 1;
+            hasNext = true;
             resetBoardList();
         }
-        const items = await getBoardItem(offset, ITEMS_PER_LOAD);
-        if (!items || items.length === 0) {
-            isEnd = true;
-            return;
-        }
-        setBoardItem(items);
-        offset += ITEMS_PER_LOAD;
+        const result = await getBoardItem(currentPage, ITEMS_PER_LOAD);
+        if (!result.posts || result.posts.length === 0) { hasNext = false; return; }
+        setBoardItem(result.posts);
+        hasNext = result.hasNext;
+        currentPage += 1;
     } catch (error) {
         console.error('Error fetching items:', error);
-        isEnd = true;
+        hasNext = false;
     } finally {
         isProcessing = false;
     }
@@ -133,31 +129,35 @@ const addSortEvent = () => {
 
 // 스크롤 이벤트 추가
 const addInfinityScrollEvent = () => {
-    offset = INITIAL_OFFSET;
-    isEnd = false;
-    isProcessing = false;
-
     window.addEventListener('scroll', async () => {
         const hasScrolledToThreshold =
             window.scrollY + window.innerHeight >=
             document.documentElement.scrollHeight * SCROLL_THRESHOLD;
         if (hasScrolledToThreshold) {
-            loadBoardItems();
+            await loadBoardItems();
         }
     });
 };
 
 const init = async () => {
     try {
-        const response = await authCheck();
-        const data = await response.json();
-        if (response.status === HTTP_NOT_AUTHORIZED) {
+        const token = authCheck();
+        if (!token) return;
+
+        const response = await fetch(`${getServerUrl()}/users/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
             window.location.href = '/html/login.html';
             return;
         }
 
+        const { data } = await response.json();
+
         const profileImageUrl = resolveImageUrl(
-            data.data.profileImageUrl,
+            data.profileImageUrl,
             DEFAULT_PROFILE_IMAGE,
         );
 

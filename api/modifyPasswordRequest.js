@@ -1,16 +1,16 @@
 import { getServerUrl } from '../utils/function.js';
-import { requestJson } from '../utils/request.js';
+import { requestJsonWithAuth} from '../utils/request.js';
 
 export const changePassword = async password => {
-    const result = requestJson(`${getServerUrl()}/v1/users/me/password`, {
+    return requestJsonWithAuth(`${getServerUrl()}/users/me/password`, {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
-            password,
+            newPassword: password,
+            confirmPassword: password,
         }),
     });
-    return result;
-};
+}

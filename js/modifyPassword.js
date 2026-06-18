@@ -12,12 +12,18 @@ import {
 const button = document.querySelector('#signupBtn');
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
-const HTTP_CREATED = 201;
+const HTTP_OK = 200;
 
-const dataResponse = await authCheck();
-const data = await dataResponse.json();
+const token = authCheck();
+if (!token) throw new Error('인증 필요');
+
+const response = await fetch(`${getServerUrl()}/users/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
+});
+const { data: userData } = await response.json();
 const profileImage = resolveImageUrl(
-    data.data.profileImageUrl,
+    userData.profileImageUrl,
     DEFAULT_PROFILE_IMAGE,
 );
 
@@ -98,7 +104,7 @@ const modifyPassword = async () => {
 
     const { status } = await changePassword(password);
 
-    if (status == HTTP_CREATED) {
+    if (status ===  HTTP_OK) {
         try {
             await fetch(`${getServerUrl()}/v1/auth/logout`, {
                 method: 'POST',

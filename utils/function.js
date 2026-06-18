@@ -12,8 +12,8 @@ export const getServerUrl = () => {
 
     const host = window.location.hostname;
     return host.includes('localhost')
-        ? 'http://localhost:3000'
-        : `http://${host}:3000`;
+        ? 'http://localhost:8080'
+        : `http://${host}:8080`;
 };
 
 export const resolveImageUrl = (url, fallback = null) => {
@@ -22,28 +22,22 @@ export const resolveImageUrl = (url, fallback = null) => {
     return `${getServerUrl()}${url}`;
 };
 
-export const serverSessionCheck = async () => {
-    const res = await fetch(`${getServerUrl()}/v1/auth/check`, {
-        method: 'GET',
-        credentials: 'include',
-    });
-    return res;
+export const authCheck = () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+        location.href = '/html/login.html'; //  토큰이 없으면 로그인 페이지 리다이렉트
+        return null;
+    }
+    return token;
 };
 
-export const authCheck = async () => {
-    const HTTP_OK = 200;
-    const response = await serverSessionCheck();
-    if (!response || response.status !== HTTP_OK)
-        location.href = '/html/login.html';
-    return response;
-};
-
-export const authCheckReverse = async () => {
-    const response = await serverSessionCheck();
-    if (response && response.ok) {
+export const authCheckReverse = () => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
         location.href = '/';
     }
 };
+
 // 이메일 유효성 검사
 export const validEmail = email => {
     const REGEX =
