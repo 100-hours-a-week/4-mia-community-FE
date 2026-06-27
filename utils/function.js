@@ -13,7 +13,7 @@ export const getServerUrl = () => {
     const host = window.location.hostname;
     return host.includes('localhost')
         ? 'http://localhost:8080'
-        : `http://${host}:8080`;
+        : `/api`;
 };
 
 export const resolveImageUrl = (url, fallback = null) => {
@@ -66,31 +66,28 @@ export const prependChild = (parent, child) => {
  * @param {boolean} isHigh? : true면 origin, false면  1/4 사이즈
  * @returns
  */
-export const fileToBase64 = (file, isHigh) => {
+export const compressImage = (file) => {
     return new Promise((resolve, reject) => {
-        const size = isHigh ? 1 : 4;
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = e => {
             const img = new Image();
             img.src = e.target.result;
             img.onload = () => {
-                const width = img.width / size;
-                const height = img.height / size;
-                const elem = document.createElement('canvas');
-                elem.width = width;
-                elem.height = height;
-                const ctx = elem.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                resolve(ctx.canvas.toDataURL());
+                const MAX_WIDTH = 800;
+                const ratio = Math.min(MAX_WIDTH / img.width, 1);
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width * ratio;
+                canvas.height = img.height * ratio;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob((blob) => {
+                    resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+                }, 'image/jpeg', 0.8);
             };
-            img.onerror = e => {
-                reject(e);
-            };
+            img.onerror = e => reject(e);
         };
-        reader.onerror = e => {
-            reject(e);
-        };
+        reader.onerror = e => reject(e);
     });
 };
 
