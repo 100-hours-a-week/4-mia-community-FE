@@ -1,4 +1,4 @@
-import express from 'express';
+import express  from 'express';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -16,12 +16,16 @@ const __dirname = dirname(__filename);
 app.use(express.static(__dirname));
 
 app.get('/config.js', (req, res) => {
-    const apiBaseUrl = process.env.API_BASE_URL || '';
+    const apiBaseUrl =
+            process.env.NODE_ENV === 'production'
+                ? process.env.API_BASE_URL_PROD
+                : process.env.API_BASE_URL_LOCAL;
+
     res.set('Cache-Control', 'no-store');
     res.type('application/javascript').send(
-        `window.__APP_CONFIG__ = ${JSON.stringify({
-            API_BASE_URL: apiBaseUrl,
-        })};`,
+        `window.__APP_CONFIG__ = {
+                    API_BASE_URL: ${JSON.stringify(apiBaseUrl)}
+        };`,
     );
 });
 
