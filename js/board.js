@@ -102,7 +102,7 @@ const setBoardDetail = data => {
                             likeData.likeCount,
                         );
                     }
-                } else if (status === 409 && code === 'POST_ALREADY_LIKED') {
+                } else if (status === 409 && code === 'ALREADY_LIKED_POST') {
                     isLiked = true;
                     setLikeButtonState(likeButtonElement, isLiked);
                 } else if (status === HTTP_NOT_AUTHORIZED) {
@@ -111,7 +111,7 @@ const setBoardDetail = data => {
                     Dialog('좋아요 실패', '좋아요 처리에 실패하였습니다.');
                 }
             } else {
-                const { ok, status, code, data: likeData } = await unlikePost(postId);
+                const { ok, status, data: likeData } = await unlikePost(postId);
                 if (ok) {
                     isLiked = false;
                     setLikeButtonState(likeButtonElement, isLiked);
@@ -120,9 +120,6 @@ const setBoardDetail = data => {
                             likeData.likeCount,
                         );
                     }
-                } else if (status === 409 && code === 'POST_ALREADY_UNLIKED') {
-                    isLiked = false;
-                    setLikeButtonState(likeButtonElement, isLiked);
                 } else if (status === HTTP_NOT_AUTHORIZED) {
                     window.location.href = '/html/login.html';
                 } else {
@@ -142,7 +139,7 @@ const setBoardDetail = data => {
 };
 
 const setBoardModify = async (data, myInfo) => {
-    if (myInfo.id === data.userId) {
+    if (myInfo.userId === data.userId) {
         const modifyElement = document.querySelector('.hidden');
         modifyElement.classList.remove('hidden');
 

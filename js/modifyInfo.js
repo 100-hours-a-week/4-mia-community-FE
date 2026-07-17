@@ -5,7 +5,7 @@ import {
     prependChild,
     getServerUrl,
     resolveImageUrl,
-    validNickname,
+    validNickname, compressImage,
 } from '../utils/function.js';
 import { userModify, userDelete } from '../api/modifyInfoRequest.js';
 import { requestJsonWithAuth} from '../utils/request.js';
@@ -123,8 +123,9 @@ const changeEventHandler = async (event, uid) => {
             changeData.profileImageUrl = null;
             if (removeProfileButton) removeProfileButton.style.display = 'none';
         } else {
+            const compressedFile = await compressImage(file);
             const formData = new FormData();
-            formData.append('profileImage', file);
+            formData.append('profileImage', compressedFile);
 
             // 파일 업로드를 위한 POST 요청 실행
             try {

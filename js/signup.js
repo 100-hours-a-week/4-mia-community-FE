@@ -19,7 +19,7 @@ const signupData = {
     email: '',
     password: '',
     nickname: '',
-    profileImageUrl: undefined,
+    profileImageUrl: '',
 };
 
 const getSignupData = () => {
@@ -34,11 +34,12 @@ const getSignupData = () => {
 
 const sendSignupData = async () => {
     const { passwordCheck, ...props } = signupData;
-    if (localStorage.getItem('profileImageUrl')) {
-        props.profileImageUrl = localStorage.getItem('profileImageUrl');
+
+    if (!props.profileImageUrl) {
+        delete props.profileImageUrl;
     }
 
-    if (props.password > MAX_PASSWORD_LENGTH) {
+    if (props.password.length > MAX_PASSWORD_LENGTH) {
         Dialog('비밀번호', '비밀번호는 20자 이하로 입력해주세요.');
         return;
     }
@@ -140,8 +141,9 @@ const inputEventHandler = async (event, uid) => {
         const password = signupData.password;
 
         if (value == '' || value == null) {
-            helperElement.textContent = '*비밀번호 한번 더 입력해주세요.';
+            helperElement.textContent = '*비밀번호를 한번 더 입력해주세요.';
         } else if (password !== value) {
+            signupData.passwordCheck = '';
             helperElement.textContent = '*비밀번호가 다릅니다.';
         } else {
             signupData.passwordCheck = value;
