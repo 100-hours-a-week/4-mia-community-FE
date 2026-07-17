@@ -1,0 +1,98 @@
+name: Build and Push Docker Image to GHCR
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/ommia_frontend
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+        image_tag: ${{ steps.generate_tag.outputs.TAG_NAME }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Log in to Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Image Tag
+        id: generate_tag
+        run: |
+            # github_sha 7자만 사용
+            SHORT_SHA="${GITHUB_SHA:0:7}"
+            # 한국시간 기준 타임 스탬프 (년월일시분초)
+            TIMESTAMP=$(TZ="Asia/Seoul" date +'%Y%m%d%H%M%S')
+            TAG_NAME="${SHORT_SHA}-${TIMESTAMP}"
+          
+            echo "생성된 이미지 태그: ${TAG_NAME}"
+            echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
+            
+
+      - name: Build and Push Docker Image
+        run: |
+            BASE_IMAGE_NAME="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" 
+            
+            TAG_NAME="${{ steps.generate_tag.outputs.TAG_NAME }}"
+            FULL_IMAGE_TAG="${BASE_IMAGE_NAME}:${TAG_NAME}"
+
+            # 이미지 빌드 후 push
+            docker build -t $FULL_IMAGE_TAG .
+            docker push $FULL_IMAGE_TAG
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+
+    steps:
+      - name: Deploy to Private Server
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.PRIVATE_IP }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          proxy_host: ${{ secrets.BASTION_PUBLIC_IP }}
+          proxy_username: ${{ secrets.USERNAME }}
+          proxy_key: ${{ secrets.KEY }}
+          proxy_port: ${{ secrets.PORT }}
+
+          script: |
+            BASE_IMAGE_NAME="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+            
+            TAG_NAME="${{ needs.build.outputs.image_tag }}"
+            FULL_IMAGE_NAME="${BASE_IMAGE_NAME}:${TAG_NAME}"
+            
+            echo "${{ secrets.GHCR_PAT }}" | 
+              docker login ghcr.io \
+                -u ${{ github.actor }} \
+                --password-stdin
+            
+            docker pull $FULL_IMAGE_NAME
+            
+            docker rm -f ommia-frontend || true
+            
+            docker run -d \
+              --name ommia-frontend \
+              -p 3000:3000 \
+              --env-file /home/${{ secrets.USERNAME }}/.env \
+              --restart always \
+              $FULL_IMAGE_NAME
