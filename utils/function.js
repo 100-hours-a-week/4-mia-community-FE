@@ -6,14 +6,7 @@ export const getServerUrl = () => {
             ? String(window.__APP_CONFIG__.API_BASE_URL).trim()
             : '';
 
-    if (configUrl) {
-        return configUrl.replace(/\/+$/, '');
-    }
-
-    const host = window.location.hostname;
-    return host.includes('localhost')
-        ? 'http://localhost:8080'
-        : `/api`;
+    return configUrl.replace(/\/+$/, '');
 };
 
 export const resolveImageUrl = (url, fallback = null) => {
@@ -104,3 +97,4 @@ export const getQueryString = param => {
 export const padTo2Digits = number => {
     return number.toString().padStart(2, '0');
 };
+
