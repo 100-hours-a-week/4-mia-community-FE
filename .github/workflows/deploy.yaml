@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/ommia_frontend
+  IMAGE_NAME: ${{ github.repository_owner }}/ommia-frontend
 
 jobs:
   build:
