@@ -176,7 +176,7 @@ const getBoardComment = async id => {
     const { ok, status, data } = await getComments(id);
     if (!ok) return [];
     if (status !== HTTP_OK) return [];
-    return data.data;
+    return data.comments;
 };
 
 const setBoardComment = (data, myInfo) => {
