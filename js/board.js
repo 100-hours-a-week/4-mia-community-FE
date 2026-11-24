@@ -135,7 +135,7 @@ const setBoardDetail = data => {
     viewCountElement.textContent = formatCount(data.stats.viewCount);
 
     const commentCountElement = document.querySelector('.commentCount h3');
-    commentCountElement.textContent = (data.commentCount ?? 0).toLocaleString();
+    commentCountElement.textContent = (data.stats.commentCount ?? 0).toLocaleString();
 };
 
 const setBoardModify = async (data, myInfo) => {

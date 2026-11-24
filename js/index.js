@@ -51,7 +51,7 @@ const setBoardItem = boardData => {
                     data.stats.viewCount ?? 0,
                     data.profileImageUrl,
                     data.nickname ,
-                    null,
+                    data.stats.commentCount ?? 0,
                     data.stats.likeCount,
                 ),
             )
