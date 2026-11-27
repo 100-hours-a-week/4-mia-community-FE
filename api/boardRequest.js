@@ -20,10 +20,16 @@ export const writeComment = (pageId, comment) =>
         body: JSON.stringify({ content: comment }),
     });
 
-export const getComments = postId =>
-    requestJsonWithAuth(`${getServerUrl()}/posts/${postId}/comments`, {
-        credentials: 'include',
-    });
+export const getComments = (postId, cursor = null, pageSize = 10) => {
+    const params = new URLSearchParams({ pageSize: String(pageSize) });
+    if (cursor !== null && cursor !== undefined) {
+        params.set('cursor', String(cursor));
+    }
+    return requestJsonWithAuth(
+        `${getServerUrl()}/posts/${postId}/comments?${params.toString()}`,
+        { credentials: 'include' },
+    );
+};
 
 export const likePost = postId =>
     requestJsonWithAuth(`${getServerUrl()}/posts/${postId}/likes`, {

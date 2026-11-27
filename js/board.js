@@ -21,6 +21,11 @@ const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
 const MAX_COMMENT_LENGTH = 1000;
 const HTTP_NOT_AUTHORIZED = 401;
 const HTTP_OK = 200;
+const COMMENTS_PER_LOAD = 10;
+
+let commentCursor = null;
+let commentHasNext = true;
+let isCommentLoading = false;
 
 const formatCount = value => {
     const count = Number(value);
@@ -172,17 +177,73 @@ const setBoardModify = async (data, myInfo) => {
     }
 };
 
-const getBoardComment = async id => {
-    const { ok, status, data } = await getComments(id);
-    if (!ok) return [];
-    if (status !== HTTP_OK) return [];
-    return data.comments;
+const getBoardComment = async (id, cursor) => {
+    const { ok, status, data } = await getComments(
+        id,
+        cursor,
+        COMMENTS_PER_LOAD,
+    );
+    if (!ok || status !== HTTP_OK || !data) {
+        return { comments: [], nextCursor: null, hasNext: false };
+    }
+    return {
+        comments: data.comments ?? [],
+        nextCursor: data.nextCursor ?? null,
+        hasNext: Boolean(data.hasNext),
+    };
+};
+
+let commentObserver = null;
+
+const loadBoardComments = async (postId, myInfo) => {
+    if (isCommentLoading || !commentHasNext) return;
+    isCommentLoading = true;
+
+    try {
+        const { comments, nextCursor, hasNext } = await getBoardComment(
+            postId,
+            commentCursor,
+        );
+        setBoardComment(comments, myInfo);
+        commentCursor = nextCursor;
+        commentHasNext = hasNext && nextCursor !== null;
+    } catch (error) {
+        console.error(error);
+        commentHasNext = false;
+    } finally {
+        isCommentLoading = false;
+    }
+
+    if (!commentHasNext && commentObserver) {
+        commentObserver.disconnect();
+        commentObserver = null;
+    }
+};
+
+// 댓글 목록 하단 sentinel이 화면에 들어오면 다음 댓글을 불러옴
+const addCommentInfiniteScroll = (postId, myInfo) => {
+    const sentinel = document.querySelector('.commentSentinel');
+    if (!sentinel) return;
+
+    commentObserver = new IntersectionObserver(
+        async entries => {
+            if (!entries.some(entry => entry.isIntersecting)) return;
+            await loadBoardComments(postId, myInfo);
+            // 불러온 뒤에도 sentinel이 계속 보이면(댓글이 짧은 경우) 이어서 로드
+            if (commentObserver) {
+                commentObserver.unobserve(sentinel);
+                commentObserver.observe(sentinel);
+            }
+        },
+        { rootMargin: '200px 0px' },
+    );
+    commentObserver.observe(sentinel);
 };
 
 const setBoardComment = (data, myInfo) => {
     const commentListElement = document.querySelector('.commentList');
     if (commentListElement) {
-        data.map(event => {
+        data.forEach(event => {
             const item = CommentItem(
                 event,
                 myInfo.userId,
@@ -264,7 +325,7 @@ const init = async () => {
         await setBoardModify(pageData, myInfo);
         setBoardDetail(pageData);
 
-        getBoardComment(pageId).then(comments => setBoardComment(comments, myInfo));
+        addCommentInfiniteScroll(pageId, myInfo);
     } catch (error) {
         console.error(error);
     }
