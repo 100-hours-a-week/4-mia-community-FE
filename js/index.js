@@ -5,10 +5,9 @@ import { authCheck, getServerUrl, prependChild, resolveImageUrl } from '../utils
 import { getPosts, searchPosts } from '../api/indexRequest.js';
 
 const DEFAULT_PROFILE_IMAGE = '../public/image/profile/default.jpg';
-const SCROLL_THRESHOLD = 0.9;
-const ITEMS_PER_LOAD = 10;
+const PAGE_BLOCK_SIZE = 5;
 let currentPage = 1;
-let hasNext = true;
+let totalPages = 1;
 const DEFAULT_SORT = 'recent';
 let currentKeyword = '';
 let currentSort = DEFAULT_SORT;
@@ -23,16 +22,11 @@ const updateSortVisibility = () => {
 };
 
 // getBoardItem 함수
-const getBoardItem = async (page = 1, pageSize = 10) => {
+const getBoardItem = async (page = 1) => {
     const result =
         currentKeyword.trim() === ''
-            ? await getPosts(page, pageSize)
-            : await searchPosts(
-                  currentKeyword,
-                  page,
-                  pageSize,
-                  currentSort,
-              );
+            ? await getPosts(page)
+            : await searchPosts(currentKeyword, page, currentSort);
     if (!result.ok) {
         throw new Error('Failed to load post list.');
     }
@@ -41,53 +35,124 @@ const getBoardItem = async (page = 1, pageSize = 10) => {
 
 const setBoardItem = boardData => {
     const boardList = document.querySelector('.boardList');
-    if (boardList && boardData) {
-        const itemsHtml = boardData
-            .map(data =>
-                BoardItem(
-                    data.id,
-                    data.createdAt,
-                    data.title,
-                    data.stats.viewCount ?? 0,
-                    data.profileImageUrl,
-                    data.nickname ,
-                    null,
-                    data.stats.likeCount,
-                ),
-            )
-            .join('');
-        boardList.innerHTML += ` ${itemsHtml}`;
-    }
+    if (!boardList) return;
+    boardList.innerHTML = (boardData ?? [])
+        .map(data =>
+            BoardItem(
+                data.id,
+                data.createdAt,
+                data.title,
+                data.stats.viewCount ?? 0,
+                data.profileImageUrl,
+                data.nickname,
+                data.stats.commentCount ?? 0,
+                data.stats.likeCount,
+            ),
+        )
+        .join('');
 };
 
-const resetBoardList = () => {
-    const boardList = document.querySelector('.boardList');
-    if (boardList) {
-        boardList.innerHTML = '';
+const createPageButton = (label, page, { active = false, disabled = false, ariaLabel } = {}) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pageButton';
+    button.textContent = label;
+    button.dataset.page = String(page);
+    if (ariaLabel) button.setAttribute('aria-label', ariaLabel);
+    if (active) {
+        button.classList.add('isActive');
+        button.setAttribute('aria-current', 'page');
     }
+    button.disabled = disabled || active;
+    return button;
 };
 
-const loadBoardItems = async ({ reset = false } = {}) => {
-    if (isProcessing || (!reset && !hasNext)) return;
+// 5개 단위 블록: [<] 1 2 3 4 5 [>]
+const renderPagination = () => {
+    const pagination = document.querySelector('.pagination');
+    if (!pagination) return;
+    pagination.innerHTML = '';
+    if (totalPages <= 1) return;
+
+    const blockStart =
+        Math.floor((currentPage - 1) / PAGE_BLOCK_SIZE) * PAGE_BLOCK_SIZE + 1;
+    const blockEnd = Math.min(blockStart + PAGE_BLOCK_SIZE - 1, totalPages);
+
+    pagination.appendChild(
+        createPageButton('<', blockStart - 1, {
+            disabled: blockStart === 1,
+            ariaLabel: '이전 페이지 묶음',
+        }),
+    );
+    for (let page = blockStart; page <= blockEnd; page += 1) {
+        pagination.appendChild(
+            createPageButton(String(page), page, {
+                active: page === currentPage,
+            }),
+        );
+    }
+    pagination.appendChild(
+        createPageButton('>', blockEnd + 1, {
+            disabled: blockEnd === totalPages,
+            ariaLabel: '다음 페이지 묶음',
+        }),
+    );
+};
+
+const getPageFromUrl = () => {
+    const page = parseInt(new URLSearchParams(location.search).get('page'), 10);
+    return Number.isInteger(page) && page > 0 ? page : 1;
+};
+
+const syncPageToUrl = page => {
+    const url = new URL(location.href);
+    if (page === 1) url.searchParams.delete('page');
+    else url.searchParams.set('page', String(page));
+    history.pushState({ page }, '', url);
+};
+
+const loadBoardItems = async (page = 1, { pushHistory = false } = {}) => {
+    if (isProcessing) return;
     isProcessing = true;
 
     try {
-        if (reset) {
-            currentPage = 1;
-            hasNext = true;
-            resetBoardList();
+        const result = await getBoardItem(page);
+        currentPage = result.currentPage ?? page;
+        totalPages = Math.max(result.totalPages ?? 1, 1);
+
+        // 범위를 벗어난 페이지 요청이면 마지막 페이지로 이동
+        if ((result.posts ?? []).length === 0 && currentPage > totalPages) {
+            isProcessing = false;
+            await loadBoardItems(totalPages, { pushHistory });
+            return;
         }
-        const result = await getBoardItem(currentPage, ITEMS_PER_LOAD);
-        if (!result.posts || result.posts.length === 0) { hasNext = false; return; }
+
         setBoardItem(result.posts);
-        hasNext = result.hasNext;
-        currentPage += 1;
+        renderPagination();
+        if (pushHistory) syncPageToUrl(currentPage);
+        window.scrollTo({ top: 0 });
     } catch (error) {
         console.error('Error fetching items:', error);
-        hasNext = false;
     } finally {
         isProcessing = false;
     }
+};
+
+const addPaginationEvent = () => {
+    const pagination = document.querySelector('.pagination');
+    if (!pagination) return;
+    pagination.addEventListener('click', event => {
+        const button = event.target.closest('.pageButton');
+        if (!button || button.disabled) return;
+        loadBoardItems(parseInt(button.dataset.page, 10), {
+            pushHistory: true,
+        });
+    });
+
+    // 뒤로/앞으로 가기 시 해당 페이지 다시 로드
+    window.addEventListener('popstate', () => {
+        loadBoardItems(getPageFromUrl());
+    });
 };
 
 const addSearchEvent = () => {
@@ -103,7 +168,7 @@ const addSearchEvent = () => {
         }
         currentKeyword = trimmedKeyword;
         updateSortVisibility();
-        await loadBoardItems({ reset: true });
+        await loadBoardItems(1, { pushHistory: true });
     };
 
     searchButton.addEventListener('click', runSearch);
@@ -123,19 +188,7 @@ const addSortEvent = () => {
     sortSelect.addEventListener('change', async () => {
         currentSort = sortSelect.value || DEFAULT_SORT;
         if (currentKeyword.trim().length === 0) return;
-        await loadBoardItems({ reset: true });
-    });
-};
-
-// 스크롤 이벤트 추가
-const addInfinityScrollEvent = () => {
-    window.addEventListener('scroll', async () => {
-        const hasScrolledToThreshold =
-            window.scrollY + window.innerHeight >=
-            document.documentElement.scrollHeight * SCROLL_THRESHOLD;
-        if (hasScrolledToThreshold) {
-            await loadBoardItems();
-        }
+        await loadBoardItems(1, { pushHistory: true });
     });
 };
 
@@ -167,11 +220,11 @@ const init = async () => {
         );
 
         updateSortVisibility();
-        await loadBoardItems({ reset: true });
+        await loadBoardItems(getPageFromUrl());
 
         addSearchEvent();
         addSortEvent();
-        addInfinityScrollEvent();
+        addPaginationEvent();
     } catch (error) {
         console.error('Initialization failed:', error);
     }

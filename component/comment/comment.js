@@ -64,7 +64,7 @@ const CommentItem = (data, writerId, postId, commentId) => {
             // 서버로 수정된 댓글 내용 전송하는 로직
             const updatedContent = textarea.value;
             const sendData = {
-                commentContent: updatedContent,
+                content: updatedContent,
             };
 
             const { ok } = await updateComment(postId, commentId, sendData);

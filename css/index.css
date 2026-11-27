@@ -11,6 +11,42 @@
     overflow-y: scroll;
 }
 
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    column-gap: 6px;
+    padding: 24px 0 40px;
+}
+
+.pageButton {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+}
+
+.pageButton:hover:not(:disabled) {
+    border-color: #7F6AEE;
+    color: #7F6AEE;
+}
+
+.pageButton.isActive {
+    border-color: #7F6AEE;
+    background-color: #7F6AEE;
+    color: #fff;
+    cursor: default;
+}
+
+.pageButton:disabled:not(.isActive) {
+    opacity: 0.4;
+    cursor: default;
+}
+
 .write {
     display: flex;
     flex-direction: column;
